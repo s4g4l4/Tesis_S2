@@ -1,84 +1,106 @@
 <!DOCTYPE html>
 <html lang="id"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Asisten Tesis Agroteknologi</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Tesis AI – Agroteknologi</title>
 <style>
-:root{--bg:#f7f8f5;--card:#fff;--tx:#1f2a1f;--mu:#667;--ac:#2f6b3a;--bd:#dde3d8}
-@media(prefers-color-scheme:dark){:root{--bg:#161b16;--card:#1f261f;--tx:#e6ece4;--mu:#9aa89a;--ac:#6fbf7d;--bd:#33402f}}
-*{box-sizing:border-box}body{margin:0;font:15px system-ui,sans-serif;background:var(--bg);color:var(--tx);display:flex;height:100vh}
-aside{width:290px;overflow:auto;border-right:1px solid var(--bd);padding:12px;background:var(--card)}
-main{flex:1;overflow:auto;padding:18px}
-h1{font-size:16px;margin:0 0 8px}.bab{font-weight:600;margin:12px 0 4px;font-size:13px;color:var(--ac)}
-.item{padding:6px 8px;border-radius:6px;cursor:pointer;font-size:13px}.item:hover{background:var(--bg)}
-.item.on{background:var(--ac);color:#fff}
-input,select,textarea,button{font:inherit;color:var(--tx);background:var(--card);border:1px solid var(--bd);border-radius:6px;padding:7px}
-textarea{width:100%;min-height:300px;resize:vertical}button{cursor:pointer}
-button.p{background:var(--ac);color:#fff;border-color:var(--ac)}
-.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0}
+:root{--bg:#f7f8f5;--card:#fff;--tx:#1f2a1f;--mu:#667;--ac:#2f7d32;--bd:#dde2d8}
+@media(prefers-color-scheme:dark){:root{--bg:#141714;--card:#1d211d;--tx:#e8ece6;--mu:#9aa;--ac:#5cb85f;--bd:#333a33}}
+*{box-sizing:border-box}body{margin:0;font:15px/1.5 system-ui,sans-serif;background:var(--bg);color:var(--tx);display:flex;min-height:100vh}
+aside{width:290px;border-right:1px solid var(--bd);padding:12px;overflow:auto;height:100vh;position:sticky;top:0;background:var(--card)}
+main{flex:1;padding:18px;max-width:900px}
+h1{font-size:17px;margin:0 0 8px}h2{font-size:16px;margin:0 0 4px}
+.bab{font-weight:600;margin:12px 0 4px;font-size:13px;color:var(--ac)}
+.it{display:block;width:100%;text-align:left;border:0;background:none;color:var(--tx);padding:6px 8px;border-radius:6px;cursor:pointer;font-size:13px}
+.it:hover{background:var(--bg)}.it.on{background:var(--ac);color:#fff}.it i{font-style:normal;float:right}
 .card{background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:14px;margin-bottom:12px}
-.hint{color:var(--mu);font-size:13px}dialog{border:1px solid var(--bd);border-radius:10px;background:var(--card);color:var(--tx);max-width:480px;width:92%}
-label{display:block;margin:8px 0 2px;font-size:13px}dialog input{width:100%}
-@media(max-width:700px){body{flex-direction:column;height:auto}aside{width:100%;max-height:220px}}
+label{display:block;font-size:12px;color:var(--mu);margin:8px 0 3px}
+input,select,textarea{width:100%;padding:8px;border:1px solid var(--bd);border-radius:6px;background:var(--bg);color:var(--tx);font:inherit}
+textarea{min-height:90px;resize:vertical}#out{min-height:280px}
+.row{display:flex;gap:8px}.row>*{flex:1}
+button.b{background:var(--ac);color:#fff;border:0;padding:9px 14px;border-radius:6px;cursor:pointer;font:inherit}
+button.s{background:none;color:var(--ac);border:1px solid var(--ac)}button:disabled{opacity:.5}
+#msg{margin:8px 0;font-size:13px}.err{color:#c0392b}.ok{color:var(--ac)}.mu{color:var(--mu);font-size:12px}
+@media(max-width:760px){body{flex-direction:column}aside{width:100%;height:auto;position:static;max-height:240px}}
 </style></head><body>
 <aside>
-<h1>📗 Asisten Tesis</h1>
-<div class="row"><button onclick="keyDlg.showModal()">🔑 Pengaturan API Key</button></div>
-<div class="row"><button onclick="exportMd()">Ekspor .md</button><button onclick="exportDoc()">Ekspor .doc</button></div>
-<div id="nav"></div></aside>
+<h1>📚 Tesis AI</h1>
+<div class="mu">Magister Agroteknologi</div>
+<label>Judul tesis</label><input id="judul" placeholder="Judul / topik penelitian">
+<label>Ringkasan konteks (perlakuan, lokasi, rancangan, dll.)</label><textarea id="ctx" style="min-height:70px"></textarea>
+<div id="nav"></div>
+<div class="row" style="margin-top:12px"><button class="b s" onclick="expAll()">⬇ Ekspor .doc</button></div>
+</aside>
 <main>
-<div class="card"><label>Judul / topik tesis (dipakai sebagai konteks semua bagian)</label>
-<input id="judul" style="width:100%" placeholder="mis. Pengaruh pupuk organik terhadap pertumbuhan padi gogo"></div>
-<div class="card"><h2 id="ttl" style="margin:0 0 4px"></h2><div class="hint" id="hint"></div>
+<h2 id="t"></h2><div class="mu" id="d"></div>
+<div class="card">
+<b>Pengaturan AI bagian ini</b>
 <div class="row">
-<select id="prov"></select>
-<input id="model" placeholder="model" style="width:240px">
-<button onclick="applyAll()" title="Samakan penyedia & model untuk semua bagian">Terapkan ke semua bagian</button></div>
-<label>Instruksi tambahan untuk AI (opsional)</label>
-<input id="instr" style="width:100%" placeholder="mis. fokus lahan gambut Sumatera Utara, panjang 500 kata">
-<div class="row"><button class="p" id="gen" onclick="generate()">✨ Buat dengan AI</button>
-<button onclick="improve()">Perbaiki tulisan saya</button><span id="st" class="hint"></span></div>
-<textarea id="txt" placeholder="Tulis atau tempel di sini. Tersimpan otomatis."></textarea></div>
+<div><label>Penyedia</label><select id="p"></select></div>
+<div><label>Model (pilih / ketik)</label><input id="m" list="ml"><datalist id="ml"></datalist></div>
+</div>
+<label>API key penyedia ini (disimpan di browser Anda)</label>
+<input id="k" type="password" autocomplete="off" placeholder="sk-... / sk-ant-... / AIza... / nvapi-...">
+<div class="row" style="margin-top:8px">
+<button class="b s" id="ld" onclick="loadNv()" style="display:none">↻ Muat semua model NVIDIA</button>
+<button class="b s" onclick="applyAll()">Terapkan penyedia &amp; model ke semua bagian</button>
+</div></div>
+<div class="card">
+<label>Instruksi tambahan (opsional)</label><textarea id="pr" placeholder="Contoh: fokus pada padi gogo di lahan kering Sumatera Utara, 600 kata"></textarea>
+<div class="row" style="margin-top:8px;align-items:center"><button class="b" id="go" onclick="gen()">✨ Buat dengan AI</button><span class="mu">Hasil bisa Anda edit langsung di bawah.</span></div>
+<div id="msg"></div>
+<label>Hasil</label><textarea id="out"></textarea>
+<div class="row" style="margin-top:8px"><button class="b s" onclick="navigator.clipboard.writeText($('#out').value)">Salin</button><button class="b s" onclick="clr()">Kosongkan</button></div>
+</div>
+<div class="mu">Hasil AI wajib diperiksa: verifikasi data, sitasi, dan referensi sebelum dipakai dalam tesis.</div>
 </main>
-<dialog id="keyDlg"><h3>API Key (disimpan di browser Anda)</h3>
-<div id="keys"></div><div class="row"><button class="p" onclick="saveKeys()">Simpan</button><button onclick="keyDlg.close()">Tutup</button></div></dialog>
 <script>
-const P={openai:{n:"ChatGPT (OpenAI)",m:"gpt-4o-mini"},anthropic:{n:"Claude (Anthropic)",m:"claude-sonnet-4-5"},
-gemini:{n:"Gemini (Google)",m:"gemini-2.0-flash"},nvidia:{n:"NVIDIA (build.nvidia.com)",m:"meta/llama-3.1-70b-instruct"}};
-const S=[["BAB I: PENDAHULUAN",[["1.1","Latar Belakang Masalah","Alasan pentingnya topik, kesenjangan harapan vs realitas (gap analysis)."],["1.2","Perumusan Masalah","Pertanyaan kritis tentang pengaruh/efektivitas perlakuan."],["1.3","Hipotesis Penelitian","Dugaan sementara berdasarkan teori."],["1.4","Tujuan Penelitian","Hal spesifik yang ingin dicapai/dibuktikan."],["1.5","Manfaat Penelitian","Manfaat akademis dan praktis bagi petani/industri."]]],
-["BAB II: TINJAUAN PUSTAKA",[["2.1","Landasan Teori","Penjelasan ilmiah tanaman, media tanam, hama/penyakit, perlakuan."],["2.2","Penelitian Terdahulu","Kajian jurnal 5 tahun terakhir yang melandasi urgensi."]]],
-["BAB III: METODE PENELITIAN",[["3.1","Tempat dan Waktu Penelitian","Lokasi spesifik dan rentang bulan."],["3.2","Bahan dan Alat","Varietas benih, pupuk, ZPT, alat ukur."],["3.3","Metode Penelitian (Rancangan Percobaan)","Model statistik RAK/RAL, taraf perlakuan."],["3.4","Pelaksanaan Penelitian","Persiapan lahan, pembibitan, aplikasi, pemeliharaan, panen."],["3.5","Parameter Pengamatan","Variabel yang diukur."],["3.6","Analisis Data","Uji F (ANOVA), DMRT/BNT taraf 5%."]]],
-["BAB IV: HASIL DAN PEMBAHASAN",[["4.1","Hasil","Data pengamatan, tabel/grafik sidik ragam, uji lanjut."],["4.2","Pembahasan","Hubungkan temuan dengan teori agronomi dan riset Bab II."]]],
-["BAB V: KESIMPULAN DAN SARAN",[["5.1","Kesimpulan","Jawaban atas hipotesis dan rumusan masalah."],["5.2","Saran","Rekomendasi bagi praktisi dan peneliti lanjutan."]]],
-["BAGIAN AKHIR",[["DP","Daftar Pustaka","Sitasi ilmiah, minimal 80% jurnal bereputasi."],["LP","Lampiran","Denah lapangan, tabel ANOVA, hasil lab, dokumentasi."]]]];
-const all=S.flatMap(b=>b[1].map(s=>({id:s[0],t:s[1],h:s[2]})));
-const ld=(k,d)=>{try{return JSON.parse(localStorage.getItem(k))??d}catch{return d}};
-const sv=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch{}};
-let D=ld("tesis",{judul:"",s:{}}),K=ld("keys",{}),cur=all[0].id;
-const sec=id=>D.s[id]??={txt:"",prov:"gemini",model:P.gemini.m,instr:""};
-const $=id=>document.getElementById(id);
-$("prov").innerHTML=Object.entries(P).map(([k,v])=>`<option value="${k}">${v.n}</option>`).join("");
-$("keys").innerHTML=Object.entries(P).map(([k,v])=>`<label>${v.n}</label><input type="password" id="k_${k}" value="${K[k]||""}">`).join("");
-function nav(){$("nav").innerHTML=S.map(b=>`<div class="bab">${b[0]}</div>`+b[1].map(s=>`<div class="item ${s[0]==cur?"on":""}" onclick="go('${s[0]}')">${s[0]} ${s[1]}</div>`).join("")).join("")}
-function go(id){save();cur=id;const s=sec(id),m=all.find(x=>x.id==id);
-$("ttl").textContent=m.id+" "+m.t;$("hint").textContent=m.h;$("prov").value=s.prov;$("model").value=s.model;$("instr").value=s.instr;$("txt").value=s.txt;$("st").textContent="";nav()}
-function save(){const s=sec(cur);s.txt=$("txt").value;s.prov=$("prov").value;s.model=$("model").value;s.instr=$("instr").value;D.judul=$("judul").value;sv("tesis",D)}
-$("prov").onchange=()=>{$("model").value=P[$("prov").value].m;save()};
-["txt","model","instr","judul"].forEach(i=>$(i).addEventListener("input",save));
-function saveKeys(){Object.keys(P).forEach(k=>K[k]=$("k_"+k).value.trim());sv("keys",K);keyDlg.close()}
-function applyAll(){save();const p=$("prov").value,m=$("model").value;all.forEach(x=>{const s=sec(x.id);s.prov=p;s.model=m});sv("tesis",D);$("st").textContent="Diterapkan ke semua bagian."}
-async function run(mode){save();const s=sec(cur),m=all.find(x=>x.id==cur);
-if(!K[s.prov]){keyDlg.showModal();return}
-const system="Anda asisten penulisan tesis S2 Agroteknologi di Indonesia. Tulis dalam Bahasa Indonesia akademik, formal, sistematis. Jangan mengarang data penelitian atau referensi; beri penanda [isi data] jika data diperlukan dan [verifikasi sitasi] untuk rujukan.";
-let prompt=`Judul tesis: ${D.judul||"(belum diisi)"}\nBagian: ${m.id} ${m.t}\nPanduan bagian: ${m.h}\n`+(s.instr?`Instruksi: ${s.instr}\n`:"")+(mode=="improve"?`Perbaiki bahasa, struktur, dan kedalaman tulisan berikut tanpa mengubah makna:\n\n${s.txt}`:`Tulis bagian ini.${s.txt?"\nDraf/catatan saya:\n"+s.txt:""}`);
-$("gen").disabled=true;$("st").textContent="Memproses…";
-try{const r=await fetch("/api/chat",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({provider:s.prov,model:s.model,apiKey:K[s.prov],system,prompt})});
-const d=await r.json();if(!r.ok)throw new Error(d.error);
-$("txt").value=(mode=="improve"||!s.txt?"":s.txt+"\n\n")+d.text;save();$("st").textContent="Selesai."}
-catch(e){$("st").textContent="Error: "+e.message}$("gen").disabled=false}
-const generate=()=>run("gen"),improve=()=>run("improve");
-function dl(name,type,c){const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([c],{type}));a.download=name;a.click()}
-function exportMd(){save();dl("tesis.md","text/markdown",`# ${D.judul||"Tesis"}\n\n`+S.map(b=>`## ${b[0]}\n\n`+b[1].map(s=>`### ${s[0]} ${s[1]}\n\n${sec(s[0]).txt}\n`).join("\n")).join("\n"))}
-function exportDoc(){save();const e=t=>t.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/\n/g,"<br>");
-dl("tesis.doc","application/msword",`<html><meta charset="utf-8"><body style="font-family:'Times New Roman';font-size:12pt"><h1>${e(D.judul||"Tesis")}</h1>`+S.map(b=>`<h2>${b[0]}</h2>`+b[1].map(s=>`<h3>${s[0]} ${s[1]}</h3><p>${e(sec(s[0]).txt)}</p>`).join("")).join("")+"</body></html>")}
-$("judul").value=D.judul;go(cur);
+const $=s=>document.querySelector(s);
+const S=[["BAB I: PENDAHULUAN",[["1.1","Latar Belakang Masalah","Alasan pentingnya meneliti topik; kesenjangan harapan dan realitas lapangan (gap analysis)."],["1.2","Perumusan Masalah","Pertanyaan kritis tentang pengaruh/efektivitas perlakuan tanaman/tanah yang diuji."],["1.3","Hipotesis Penelitian","Dugaan sementara berdasarkan teori."],["1.4","Tujuan Penelitian","Hal spesifik yang ingin dicapai/dibuktikan."],["1.5","Manfaat Penelitian","Kegunaan akademis dan praktis bagi petani/industri agraria."]]],
+["BAB II: TINJAUAN PUSTAKA",[["2.1","Landasan Teori","Penjelasan ilmiah mendalam tentang tanaman, media tanam, hama/penyakit, atau perlakuan yang digunakan."],["2.2","Penelitian Terdahulu","Kajian jurnal ilmiah (terutama 5 tahun terakhir) yang melandasi urgensi penelitian."]]],
+["BAB III: METODE PENELITIAN",[["3.1","Tempat dan Waktu Penelitian","Lokasi spesifik dan rentang bulan pelaksanaan."],["3.2","Bahan dan Alat","Varietas benih, pupuk, ZPT, serta alat ukur."],["3.3","Metode Penelitian (Rancangan Percobaan)","Model statistik (RAK/RAL), faktor tunggal atau faktorial, taraf perlakuan."],["3.4","Pelaksanaan Penelitian","Persiapan lahan/media, pembibitan, aplikasi perlakuan, pemeliharaan, panen."],["3.5","Parameter Pengamatan","Variabel yang diukur (tinggi tanaman, jumlah daun, bobot basah, kadar hara, dll.)."],["3.6","Analisis Data","Uji F (ANOVA) dan uji lanjut DMRT/BNT taraf 5%."]]],
+["BAB IV: HASIL DAN PEMBAHASAN",[["4.1","Hasil","Penyajian data pengamatan dalam tabel/grafik, sidik ragam, dan uji lanjut."],["4.2","Pembahasan","Penjelasan pengaruh nyata/tidak nyata, dihubungkan dengan teori agronomi/botani dan riset Bab II."]]],
+["BAB V: KESIMPULAN DAN SARAN",[["5.1","Kesimpulan","Ringkasan jawaban atas hipotesis dan rumusan masalah."],["5.2","Saran","Rekomendasi dosis/perlakuan terbaik untuk praktisi dan tindak lanjut penelitian."]]],
+["BAGIAN AKHIR TESIS",[["DP","Daftar Pustaka","Standar sitasi ilmiah; minimal 80% dari jurnal bereputasi."],["LP","Lampiran","Denah lapangan, tabel ANOVA mentah, hasil uji laboratorium, foto dokumentasi."]]]];
+const PV={openai:"ChatGPT (OpenAI)",claude:"Claude (Anthropic)",gemini:"Gemini (Google)",nvidia:"NVIDIA (nvidia.com)"};
+const MD={openai:["gpt-4o","gpt-4o-mini","gpt-4.1","gpt-4.1-mini","o4-mini"],
+claude:["claude-sonnet-5-5","claude-opus-5-5","claude-haiku-4-5-20251001"],
+gemini:["gemini-2.5-flash","gemini-2.5-pro","gemini-2.0-flash"],
+nvidia:["meta/llama-3.3-70b-instruct","meta/llama-3.1-405b-instruct","meta/llama-3.1-70b-instruct","meta/llama-3.1-8b-instruct","nvidia/llama-3.1-nemotron-70b-instruct","nvidia/llama-3.3-nemotron-super-49b-v1","deepseek-ai/deepseek-r1","deepseek-ai/deepseek-v3.1","mistralai/mistral-large-2-instruct","mistralai/mixtral-8x22b-instruct-v0.1","qwen/qwen2.5-72b-instruct","qwen/qwen3-235b-a22b","google/gemma-2-27b-it","microsoft/phi-3-medium-128k-instruct","openai/gpt-oss-120b"]};
+let st={meta:{},keys:{},sec:{}};
+try{st=Object.assign(st,JSON.parse(localStorage.getItem("tesis")||"{}"))}catch(e){}
+const save=()=>{try{localStorage.setItem("tesis",JSON.stringify(st))}catch(e){}};
+let cur="1.1";
+const ALL=S.flatMap(b=>b[1]);
+const sec=id=>st.sec[id]||(st.sec[id]={p:"openai",m:MD.openai[0],pr:"",out:""});
+$("#p").innerHTML=Object.entries(PV).map(([k,v])=>`<option value="${k}">${v}</option>`).join("");
+function nav(){$("#nav").innerHTML=S.map(([b,l])=>`<div class="bab">${b}</div>`+l.map(([id,t])=>`<button class="it ${id===cur?"on":""}" onclick="pick('${id}')">${/^\d/.test(id)?id+" ":""}${t}<i>${sec(id).out?"✓":""}</i></button>`).join("")).join("")}
+function dl(){$("#ml").innerHTML=(MD[$("#p").value]||[]).map(m=>`<option value="${m}">`).join("");$("#ld").style.display=$("#p").value==="nvidia"?"":"none"}
+function pick(id){cur=id;const [,t,d]=ALL.find(x=>x[0]===id),s=sec(id);
+$("#t").textContent=t;$("#d").textContent=d;$("#p").value=s.p;$("#m").value=s.m;$("#k").value=st.keys[s.p]||"";$("#pr").value=s.pr;$("#out").value=s.out;$("#msg").textContent="";dl();nav()}
+$("#p").onchange=()=>{const s=sec(cur);s.p=$("#p").value;s.m=MD[s.p][0];$("#m").value=s.m;$("#k").value=st.keys[s.p]||"";dl();save()};
+$("#m").oninput=()=>{sec(cur).m=$("#m").value.trim();save()};
+$("#k").oninput=()=>{st.keys[$("#p").value]=$("#k").value.trim();save()};
+$("#pr").oninput=()=>{sec(cur).pr=$("#pr").value;save()};
+$("#out").oninput=()=>{sec(cur).out=$("#out").value;save();nav()};
+$("#judul").oninput=()=>{st.meta.judul=$("#judul").value;save()};
+$("#ctx").oninput=()=>{st.meta.ctx=$("#ctx").value;save()};
+function applyAll(){const s=sec(cur);ALL.forEach(x=>{const t=sec(x[0]);t.p=s.p;t.m=s.m});save();msg("Pengaturan diterapkan ke semua bagian.","ok")}
+function clr(){$("#out").value="";sec(cur).out="";save();nav()}
+function msg(t,c){$("#msg").className=c;$("#msg").textContent=t}
+async function api(path,body){let r,t;
+try{r=await fetch(path,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});t=await r.text()}
+catch(e){throw new Error("Tidak dapat terhubung ke server: "+e.message)}
+let j;try{j=JSON.parse(t)}catch{throw new Error(`Server membalas non-JSON (HTTP ${r.status}). Pastikan dibuka lewat URL Vercel dan folder api/ ikut ter-deploy. Cuplikan: `+t.slice(0,80).replace(/\s+/g," "))}
+if(!r.ok||j.error)throw new Error(j.error||"HTTP "+r.status);return j}
+async function loadNv(){msg("Memuat model NVIDIA…","mu");try{const j=await api("/api/models",{key:st.keys.nvidia});MD.nvidia=j.models;dl();msg(j.models.length+" model NVIDIA dimuat.","ok")}catch(e){msg(e.message,"err")}}
+async function gen(){const s=sec(cur),[,t,d]=ALL.find(x=>x[0]===cur);
+const key=st.keys[s.p];if(!key)return msg("Isi API key untuk "+PV[s.p]+" dulu.","err");
+const system="Anda asisten penulisan tesis Magister Agroteknologi (Indonesia). Tulis dalam bahasa Indonesia akademik formal, paragraf mengalir, sesuai kaidah tesis. Jangan mengarang data, angka, atau referensi; bila perlu rujukan, beri placeholder [sitasi: penulis, tahun] dan tandai yang perlu diverifikasi.";
+const prompt=`Judul tesis: ${st.meta.judul||"(belum diisi)"}\nKonteks penelitian: ${st.meta.ctx||"(belum diisi)"}\nBagian: ${cur} ${t}\nPanduan bagian: ${d}\nInstruksi tambahan: ${s.pr||"-"}\n\nTuliskan isi bagian ini.`;
+$("#go").disabled=true;msg("AI sedang menulis…","mu");
+try{const j=await api("/api/chat",{provider:s.p,model:s.m,key,system,prompt,maxTokens:2500});s.out=j.text;$("#out").value=j.text;save();nav();msg("Selesai.","ok")}
+catch(e){msg(e.message,"err")}finally{$("#go").disabled=false}}
+function expAll(){const h=S.map(([b,l])=>`<h1>${b}</h1>`+l.map(([id,t])=>`<h2>${id} ${t}</h2>`+((sec(id).out||"").split(/\n+/).map(p=>`<p>${p.replace(/&/g,"&amp;").replace(/</g,"&lt;")}</p>`).join(""))).join("")).join("");
+const a=document.createElement("a");a.href=URL.createObjectURL(new Blob(["<html><meta charset=utf-8><body>"+`<h1>${(st.meta.judul||"Tesis").replace(/</g,"&lt;")}</h1>`+h+"</body></html>"],{type:"application/msword"}));a.download="tesis.doc";a.click()}
+$("#judul").value=st.meta.judul||"";$("#ctx").value=st.meta.ctx||"";pick("1.1");
 </script></body></html>
