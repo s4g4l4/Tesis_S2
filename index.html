@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="id"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Asisten Tesis Agroteknologi</title>
+<style>
+:root{--bg:#f7f8f5;--card:#fff;--tx:#1f2a1f;--mu:#667;--ac:#2f6b3a;--bd:#dde3d8}
+@media(prefers-color-scheme:dark){:root{--bg:#161b16;--card:#1f261f;--tx:#e6ece4;--mu:#9aa89a;--ac:#6fbf7d;--bd:#33402f}}
+*{box-sizing:border-box}body{margin:0;font:15px system-ui,sans-serif;background:var(--bg);color:var(--tx);display:flex;height:100vh}
+aside{width:290px;overflow:auto;border-right:1px solid var(--bd);padding:12px;background:var(--card)}
+main{flex:1;overflow:auto;padding:18px}
+h1{font-size:16px;margin:0 0 8px}.bab{font-weight:600;margin:12px 0 4px;font-size:13px;color:var(--ac)}
+.item{padding:6px 8px;border-radius:6px;cursor:pointer;font-size:13px}.item:hover{background:var(--bg)}
+.item.on{background:var(--ac);color:#fff}
+input,select,textarea,button{font:inherit;color:var(--tx);background:var(--card);border:1px solid var(--bd);border-radius:6px;padding:7px}
+textarea{width:100%;min-height:300px;resize:vertical}button{cursor:pointer}
+button.p{background:var(--ac);color:#fff;border-color:var(--ac)}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:14px;margin-bottom:12px}
+.hint{color:var(--mu);font-size:13px}dialog{border:1px solid var(--bd);border-radius:10px;background:var(--card);color:var(--tx);max-width:480px;width:92%}
+label{display:block;margin:8px 0 2px;font-size:13px}dialog input{width:100%}
+@media(max-width:700px){body{flex-direction:column;height:auto}aside{width:100%;max-height:220px}}
+</style></head><body>
+<aside>
+<h1>📗 Asisten Tesis</h1>
+<div class="row"><button onclick="keyDlg.showModal()">🔑 Pengaturan API Key</button></div>
+<div class="row"><button onclick="exportMd()">Ekspor .md</button><button onclick="exportDoc()">Ekspor .doc</button></div>
+<div id="nav"></div></aside>
+<main>
+<div class="card"><label>Judul / topik tesis (dipakai sebagai konteks semua bagian)</label>
+<input id="judul" style="width:100%" placeholder="mis. Pengaruh pupuk organik terhadap pertumbuhan padi gogo"></div>
+<div class="card"><h2 id="ttl" style="margin:0 0 4px"></h2><div class="hint" id="hint"></div>
+<div class="row">
+<select id="prov"></select>
+<input id="model" placeholder="model" style="width:240px">
+<button onclick="applyAll()" title="Samakan penyedia & model untuk semua bagian">Terapkan ke semua bagian</button></div>
+<label>Instruksi tambahan untuk AI (opsional)</label>
+<input id="instr" style="width:100%" placeholder="mis. fokus lahan gambut Sumatera Utara, panjang 500 kata">
+<div class="row"><button class="p" id="gen" onclick="generate()">✨ Buat dengan AI</button>
+<button onclick="improve()">Perbaiki tulisan saya</button><span id="st" class="hint"></span></div>
+<textarea id="txt" placeholder="Tulis atau tempel di sini. Tersimpan otomatis."></textarea></div>
+</main>
+<dialog id="keyDlg"><h3>API Key (disimpan di browser Anda)</h3>
+<div id="keys"></div><div class="row"><button class="p" onclick="saveKeys()">Simpan</button><button onclick="keyDlg.close()">Tutup</button></div></dialog>
+<script>
+const P={openai:{n:"ChatGPT (OpenAI)",m:"gpt-4o-mini"},anthropic:{n:"Claude (Anthropic)",m:"claude-sonnet-4-5"},
+gemini:{n:"Gemini (Google)",m:"gemini-2.0-flash"},nvidia:{n:"NVIDIA (build.nvidia.com)",m:"meta/llama-3.1-70b-instruct"}};
+const S=[["BAB I: PENDAHULUAN",[["1.1","Latar Belakang Masalah","Alasan pentingnya topik, kesenjangan harapan vs realitas (gap analysis)."],["1.2","Perumusan Masalah","Pertanyaan kritis tentang pengaruh/efektivitas perlakuan."],["1.3","Hipotesis Penelitian","Dugaan sementara berdasarkan teori."],["1.4","Tujuan Penelitian","Hal spesifik yang ingin dicapai/dibuktikan."],["1.5","Manfaat Penelitian","Manfaat akademis dan praktis bagi petani/industri."]]],
+["BAB II: TINJAUAN PUSTAKA",[["2.1","Landasan Teori","Penjelasan ilmiah tanaman, media tanam, hama/penyakit, perlakuan."],["2.2","Penelitian Terdahulu","Kajian jurnal 5 tahun terakhir yang melandasi urgensi."]]],
+["BAB III: METODE PENELITIAN",[["3.1","Tempat dan Waktu Penelitian","Lokasi spesifik dan rentang bulan."],["3.2","Bahan dan Alat","Varietas benih, pupuk, ZPT, alat ukur."],["3.3","Metode Penelitian (Rancangan Percobaan)","Model statistik RAK/RAL, taraf perlakuan."],["3.4","Pelaksanaan Penelitian","Persiapan lahan, pembibitan, aplikasi, pemeliharaan, panen."],["3.5","Parameter Pengamatan","Variabel yang diukur."],["3.6","Analisis Data","Uji F (ANOVA), DMRT/BNT taraf 5%."]]],
+["BAB IV: HASIL DAN PEMBAHASAN",[["4.1","Hasil","Data pengamatan, tabel/grafik sidik ragam, uji lanjut."],["4.2","Pembahasan","Hubungkan temuan dengan teori agronomi dan riset Bab II."]]],
+["BAB V: KESIMPULAN DAN SARAN",[["5.1","Kesimpulan","Jawaban atas hipotesis dan rumusan masalah."],["5.2","Saran","Rekomendasi bagi praktisi dan peneliti lanjutan."]]],
+["BAGIAN AKHIR",[["DP","Daftar Pustaka","Sitasi ilmiah, minimal 80% jurnal bereputasi."],["LP","Lampiran","Denah lapangan, tabel ANOVA, hasil lab, dokumentasi."]]]];
+const all=S.flatMap(b=>b[1].map(s=>({id:s[0],t:s[1],h:s[2]})));
+const ld=(k,d)=>{try{return JSON.parse(localStorage.getItem(k))??d}catch{return d}};
+const sv=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch{}};
+let D=ld("tesis",{judul:"",s:{}}),K=ld("keys",{}),cur=all[0].id;
+const sec=id=>D.s[id]??={txt:"",prov:"gemini",model:P.gemini.m,instr:""};
+const $=id=>document.getElementById(id);
+$("prov").innerHTML=Object.entries(P).map(([k,v])=>`<option value="${k}">${v.n}</option>`).join("");
+$("keys").innerHTML=Object.entries(P).map(([k,v])=>`<label>${v.n}</label><input type="password" id="k_${k}" value="${K[k]||""}">`).join("");
+function nav(){$("nav").innerHTML=S.map(b=>`<div class="bab">${b[0]}</div>`+b[1].map(s=>`<div class="item ${s[0]==cur?"on":""}" onclick="go('${s[0]}')">${s[0]} ${s[1]}</div>`).join("")).join("")}
+function go(id){save();cur=id;const s=sec(id),m=all.find(x=>x.id==id);
+$("ttl").textContent=m.id+" "+m.t;$("hint").textContent=m.h;$("prov").value=s.prov;$("model").value=s.model;$("instr").value=s.instr;$("txt").value=s.txt;$("st").textContent="";nav()}
+function save(){const s=sec(cur);s.txt=$("txt").value;s.prov=$("prov").value;s.model=$("model").value;s.instr=$("instr").value;D.judul=$("judul").value;sv("tesis",D)}
+$("prov").onchange=()=>{$("model").value=P[$("prov").value].m;save()};
+["txt","model","instr","judul"].forEach(i=>$(i).addEventListener("input",save));
+function saveKeys(){Object.keys(P).forEach(k=>K[k]=$("k_"+k).value.trim());sv("keys",K);keyDlg.close()}
+function applyAll(){save();const p=$("prov").value,m=$("model").value;all.forEach(x=>{const s=sec(x.id);s.prov=p;s.model=m});sv("tesis",D);$("st").textContent="Diterapkan ke semua bagian."}
+async function run(mode){save();const s=sec(cur),m=all.find(x=>x.id==cur);
+if(!K[s.prov]){keyDlg.showModal();return}
+const system="Anda asisten penulisan tesis S2 Agroteknologi di Indonesia. Tulis dalam Bahasa Indonesia akademik, formal, sistematis. Jangan mengarang data penelitian atau referensi; beri penanda [isi data] jika data diperlukan dan [verifikasi sitasi] untuk rujukan.";
+let prompt=`Judul tesis: ${D.judul||"(belum diisi)"}\nBagian: ${m.id} ${m.t}\nPanduan bagian: ${m.h}\n`+(s.instr?`Instruksi: ${s.instr}\n`:"")+(mode=="improve"?`Perbaiki bahasa, struktur, dan kedalaman tulisan berikut tanpa mengubah makna:\n\n${s.txt}`:`Tulis bagian ini.${s.txt?"\nDraf/catatan saya:\n"+s.txt:""}`);
+$("gen").disabled=true;$("st").textContent="Memproses…";
+try{const r=await fetch("/api/chat",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({provider:s.prov,model:s.model,apiKey:K[s.prov],system,prompt})});
+const d=await r.json();if(!r.ok)throw new Error(d.error);
+$("txt").value=(mode=="improve"||!s.txt?"":s.txt+"\n\n")+d.text;save();$("st").textContent="Selesai."}
+catch(e){$("st").textContent="Error: "+e.message}$("gen").disabled=false}
+const generate=()=>run("gen"),improve=()=>run("improve");
+function dl(name,type,c){const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([c],{type}));a.download=name;a.click()}
+function exportMd(){save();dl("tesis.md","text/markdown",`# ${D.judul||"Tesis"}\n\n`+S.map(b=>`## ${b[0]}\n\n`+b[1].map(s=>`### ${s[0]} ${s[1]}\n\n${sec(s[0]).txt}\n`).join("\n")).join("\n"))}
+function exportDoc(){save();const e=t=>t.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/\n/g,"<br>");
+dl("tesis.doc","application/msword",`<html><meta charset="utf-8"><body style="font-family:'Times New Roman';font-size:12pt"><h1>${e(D.judul||"Tesis")}</h1>`+S.map(b=>`<h2>${b[0]}</h2>`+b[1].map(s=>`<h3>${s[0]} ${s[1]}</h3><p>${e(sec(s[0]).txt)}</p>`).join("")).join("")+"</body></html>")}
+$("judul").value=D.judul;go(cur);
+</script></body></html>
